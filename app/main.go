@@ -9,7 +9,7 @@ import (
 	"os/signal"
 	"time"
 
-	mydb "app/mydb"
+	"app/mydb"
 )
 
 func main() {
@@ -19,6 +19,21 @@ func main() {
 		l.Fatal(err)
 	}
 	defer db.Close()
+
+	ticker := time.NewTicker(5 * time.Second)
+	quit := make(chan struct{})
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				generateKeys()
+			case <-quit:
+				ticker.Stop()
+				return
+			}
+		}
+	}()
+
 	http.HandleFunc("/auth", func(rw http.ResponseWriter, r *http.Request) {
 		fmt.Print("Authorized")
 	})
@@ -49,4 +64,22 @@ func gracefulShutdown(s *http.Server, l *log.Logger) {
 
 	tc, _ := context.WithTimeout(context.Background(), 30*time.Second)
 	s.Shutdown(tc)
+}
+
+func generateKeys() {
+	err := mydb.RunSQL("use [users-db] delete from Keys")
+	if err != nil {
+		log.Fatalf("Error generating random key: GenerateRandomString(15)=%v", err)
+	}
+	for i := 0; i < 10; i++ {
+		key, err := mydb.GenerateRandomString(15)
+		if err != nil {
+			log.Fatalf("Error generating random key: GenerateRandomString(15)=%v", err)
+		}
+		err = mydb.RunSQL("use [users-db] insert into Keys values ('" + key + "') ")
+		if err != nil {
+			log.Fatalf("Error generating random key: GenerateRandomString(15)=%v", err)
+		}
+	}
+
 }

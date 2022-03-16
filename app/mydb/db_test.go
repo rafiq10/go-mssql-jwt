@@ -22,3 +22,29 @@ func TestGetDb(t *testing.T) {
 	})
 
 }
+
+// func TestRunSqlFromFile(t *testing.T) {
+// 	t.Run("testing db initialization", func(t *testing.T) {
+// 		path, err := os.Getwd()
+// 		if err != nil {
+// 			t.Errorf("Not able to get current path: os.Getwd()=%v", err)
+// 		}
+
+// 		path = filepath.Join(path, "init.sql")
+// 		err = RunSqlFromFile(path)
+// 		if err != nil {
+// 			t.Errorf("Not able execute sql from file: RunSqlFromFile(%s)=%v", path, err)
+// 		}
+// 	})
+// }
+
+func TestRunSQL(t *testing.T) {
+	key, err := GenerateRandomString(15)
+	if err != nil {
+		t.Errorf("Error generating random key: GenerateRandomString(15)=%v", err)
+	}
+	err = RunSQL("use [users-db] insert into Keys values ('" + key + "') ")
+	if err != nil {
+		t.Errorf("Error generating random key: GenerateRandomString(15)=%v", err)
+	}
+}

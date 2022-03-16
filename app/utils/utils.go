@@ -8,9 +8,12 @@ import (
 )
 
 func GetDotEnvVar(key string) string {
-	err := godotenv.Load("../.env")
+	err := godotenv.Load("../.env", ".env")
 	if err != nil {
-		log.Fatalf("GetDotEnvVar(%s) error: %s", key, err.Error())
+		err := godotenv.Load(".env")
+		if err != nil {
+			log.Fatalf("GetDotEnvVar(%s) error: %s", key, err.Error())
+		}
 	}
 	return os.Getenv(key)
 }

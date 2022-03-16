@@ -15,5 +15,5 @@ run-test-db:
 .PHONY: remove-last-container
 remove-last-container:
 	@docker stop $(LAST_CT_IT)	
-	@sleep 5	
+	@sleep 10	
 	@docker rm $(LAST_CT_IT)	
