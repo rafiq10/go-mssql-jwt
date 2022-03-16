@@ -20,7 +20,7 @@ func main() {
 	}
 	defer db.Close()
 
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(24 * time.Hour)
 	quit := make(chan struct{})
 	go func() {
 		for {
