@@ -39,6 +39,8 @@ func main() {
 
 	http.HandleFunc("/auth", handlers.NotImplemented)
 
+	log.Fatal(http.ListenAndServeTLS(":9090", "RootCA.crt", "RootCA.key", nil))
+
 	s := &http.Server{
 		Addr: ":9090",
 		// Handler:      mycors(sm),
