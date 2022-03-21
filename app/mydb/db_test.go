@@ -39,12 +39,12 @@ func TestGetDb(t *testing.T) {
 // }
 
 func TestRunSQL(t *testing.T) {
-	key, err := GenerateRandomString(15)
+	err := GenerateKeys()
 	if err != nil {
-		t.Errorf("Error generating random key: GenerateRandomString(15)=%v", err)
+		t.Errorf("Error generating random key: GenerateKeys(15)=%v", err)
 	}
-	err = RunSQL("use [users-db] insert into Keys values ('" + key + "') ")
-	if err != nil {
-		t.Errorf("Error generating random key: GenerateRandomString(15)=%v", err)
-	}
+	// err = RunSQL("use [users-db] insert into Keys values ('" + key + "') ")
+	// if err != nil {
+	// 	t.Errorf("Error generating random key: GenerateRandomString(15)=%v", err)
+	// }
 }

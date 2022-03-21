@@ -6,10 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"crypto/rand"
-	"math/big"
-
 	_ "github.com/denisenkom/go-mssqldb"
+	"github.com/google/uuid"
 )
 
 var db_pwd = utils.GetDotEnvVar("DB_PWD")
@@ -34,7 +32,6 @@ func RunSqlFromFile(path string) error {
 	sql := string(c)
 	_, err = db.Exec(sql)
 
-	fmt.Errorf("SQL: %s", sql)
 	if err != nil {
 		return fmt.Errorf("RunSqlFromFile(%s)=\n %v\nError trying to db.Exec(%s)", path, err, sql)
 	}
@@ -57,20 +54,22 @@ func RunSQL(sql string) error {
 	return nil
 }
 
-// GenerateRandomString returns a securely generated random string.
-// It will return an error if the system's secure random
-// number generator fails to function correctly, in which
-// case the caller should not continue.
-func GenerateRandomString(n int) (string, error) {
-	const letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
-	ret := make([]byte, n)
-	for i := 0; i < n; i++ {
-		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(letters))))
-		if err != nil {
-			return "", err
-		}
-		ret[i] = letters[num.Int64()]
+func GenerateKeys() error {
+	err := RunSQL("use [users-db] delete from Keys")
+	if err != nil {
+		return fmt.Errorf("Error generating random key: GenerateRandomString(15)=%v", err)
 	}
+	for i := 0; i < 10; i++ {
+		key, err := utils.GenerateRandomString(15)
+		if err != nil {
+			return fmt.Errorf("Error generating random key: GenerateRandomString(15)=%v", err)
+		}
+		keyId := uuid.New().String()
+		err = RunSQL("use [users-db] insert into Keys (id,[key]) values ('" + keyId + "','" + key + "') ")
+		if err != nil {
+			return fmt.Errorf("Error generating random key: GenerateRandomString(15)=%v", err)
+		}
+	}
+	return nil
 
-	return string(ret), nil
 }
