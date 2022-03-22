@@ -9,14 +9,17 @@ import (
 	"time"
 
 	"app/handlers"
+	mylog "app/myLog"
 	"app/mydb"
 )
 
 func main() {
-	l := log.New(os.Stdout, "app.com", log.LstdFlags)
+	l := &mylog.MyLog{}
+	l.Init()
+
 	db, err := mydb.GetDb()
 	if err != nil {
-		l.Fatal(err)
+		l.Err(err.Error())
 	}
 	defer db.Close()
 
@@ -52,11 +55,11 @@ func main() {
 
 }
 
-func gracefulShutdown(s *http.Server, l *log.Logger) {
+func gracefulShutdown(s *http.Server, l *mylog.MyLog) {
 	go func() {
 		err := s.ListenAndServe()
 		if err != nil {
-			l.Fatal(err)
+			l.Err(err.Error())
 		}
 	}()
 
@@ -64,7 +67,7 @@ func gracefulShutdown(s *http.Server, l *log.Logger) {
 	signal.Notify(sigChan, os.Interrupt)
 	signal.Notify(sigChan, os.Kill)
 	sig := <-sigChan
-	l.Println("Received terminate shutdown", sig)
+	l.Info("Received terminate shutdown: " + sig.String())
 
 	tc, _ := context.WithTimeout(context.Background(), 30*time.Second)
 	s.Shutdown(tc)
