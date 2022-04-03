@@ -1,6 +1,8 @@
 package utils
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestGetDotEnvVar(t *testing.T) {
 
@@ -14,6 +16,7 @@ func TestGetDotEnvVar(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// t.Errorf("got: %s, want: %s", GetDotEnvVar(tt.key), tt.want)
 			if got := GetDotEnvVar(tt.key); got == tt.want {
 				t.Errorf("GetDotEnvVar() = %v, want %v", got, tt.want)
 			}

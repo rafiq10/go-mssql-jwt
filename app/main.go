@@ -13,6 +13,7 @@ import (
 )
 
 func main() {
+
 	l := log.New(os.Stdout, "app.com", log.LstdFlags)
 	db, err := mydb.GetDb()
 	if err != nil {
