@@ -23,8 +23,4 @@ func TestRunSQL(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error generating random key: GenerateKeys(15)=%v", err)
 	}
-	// err = RunSQL("use [users-db] insert into Keys values ('" + key + "') ")
-	// if err != nil {
-	// 	t.Errorf("Error generating random key: GenerateRandomString(15)=%v", err)
-	// }
 }

@@ -1,7 +1,7 @@
 package mydb
 
 import (
-	"time"
+	// "time"
 	jwt "github.com/golang-jwt/jwt/v4"
 )
 
@@ -10,6 +10,6 @@ type UserClaims struct {
 	sessionID int64
 }    
 
-func (u *UserClaims) Valid error {
-	u.VerifyExpiresAt(time.Now().Unix())
-}
+// func (u *UserClaims) Valid error {
+// 	u.VerifyExpiresAt(time.Now().Unix())
+// }
