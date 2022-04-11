@@ -24,3 +24,7 @@ func TestRunSQL(t *testing.T) {
 		t.Errorf("Error generating random key: GenerateKeys(15)=%v", err)
 	}
 }
+
+// insert into auth.users(tf, user_name,email,pwd, created_at,usr_role,department) values
+// ('TF05069','Edu MS','edums@gmail.com','$2a$10$ybMx2eDHAOUqi65lQEyBSeeBKdQHUDdvLdn64600S.5ax26VVcJKu',current_timestamp,'tis-gf-oper','GF')
+// on conflict (tf) do nothing;

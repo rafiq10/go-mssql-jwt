@@ -12,6 +12,7 @@ func TestGetDotEnvVar(t *testing.T) {
 		want string
 	}{
 		{name: "db URI not empty string", key: "DATABASE_URI", want: ""},
+		{name: "db DB_PWD not empty string", key: "DB_PWD", want: ""},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
-	"fmt"
+	// "fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
 
+	"app/handlers"
 	mydb "app/mydb"
 )
 
@@ -20,8 +21,21 @@ func main() {
 		l.Fatal(err)
 	}
 	defer db.Close()
+
+	http.HandleFunc("/createuser", handlers.SaveUser)
 	http.HandleFunc("/auth", func(rw http.ResponseWriter, r *http.Request) {
-		fmt.Print("Authorized")
+		// hash, err := u.HashPassword("secret12345")
+		// if err != nil {
+		// 	panic(err)
+		// }
+
+		// err = u.ComparePassword("secret12345", []byte(hash))
+		// if err != nil {
+		// 	rw.Write([]byte("not logged in!"))
+		// 	log.Default().Println(err.Error())
+		// }
+		rw.Write([]byte("logged in!"))
+
 	})
 	s := &http.Server{
 		Addr: ":9090",
