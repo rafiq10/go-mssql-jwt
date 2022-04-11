@@ -24,20 +24,16 @@ func (u *User) Save(db *sql.DB) (*User, error) {
 		return nil, fmt.Errorf("hashPassword(u.Pwd)=%w", err)
 	}
 
-	fmt.Printf("User interface: %v", u)
 	mySQl := `insert into auth.users 
 	(tf,user_name, email, salt, pwd, created_at, usr_role, department) 
 	values 
 	('` + u.TF + `','` + u.User_Name + `','` + u.Email + `','` + u.Salt + `','` + string(h) + `',Now(),'` + u.UsrRole + `','` + u.Department + `') on conflict (tf) do nothing;`
 
-	fmt.Println(mySQl)
 	_, err = db.Exec(mySQl)
 
 	if err != nil {
-		fmt.Printf("Error saving user: %w", err)
 		return nil, err
 	}
-	fmt.Println("User saved")
 	return u, nil
 }
 

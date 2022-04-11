@@ -33,8 +33,11 @@ func SaveUser(w http.ResponseWriter, r *http.Request) {
 		Department: r.FormValue("department"),
 	}
 
-	fmt.Printf("User struct: %v", u)
-	u.Save(db)
+	_, err = u.Save(db)
+	if err != nil {
+		JSONHandleError(w, err)
+	}
+
 }
 
 func JSONHandleError(w http.ResponseWriter, err error) {
