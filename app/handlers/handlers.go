@@ -7,19 +7,38 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
+	"text/template"
 	"time"
 )
 
-func SaveUser(w http.ResponseWriter, r *http.Request) {
+func Index(w http.ResponseWriter, r *http.Request) {
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+	tmpl, err := template.ParseFiles(wd + "/templates/index.html")
+	if err != nil {
+		log.Fatal(err)
+	}
 
+	err = tmpl.Execute(w, nil)
+	if err != nil {
+		JSONHandleError(w, err)
+	}
+}
+func Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		return
 	}
 
 	db, err := mydb.GetDb()
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
 	}
 
 	u := &models.User{
@@ -33,11 +52,22 @@ func SaveUser(w http.ResponseWriter, r *http.Request) {
 		Department: r.FormValue("department"),
 	}
 
-	_, err = u.Save(db)
+	usr, err := u.Save(db)
 	if err != nil {
 		JSONHandleError(w, err)
+		return
 	}
 
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+	tmpl, err := template.ParseFiles(wd + "/templates/register.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tmpl.Execute(w, usr)
 }
 
 func JSONHandleError(w http.ResponseWriter, err error) {

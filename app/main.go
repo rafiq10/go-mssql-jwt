@@ -22,7 +22,8 @@ func main() {
 	}
 	defer db.Close()
 
-	http.HandleFunc("/createuser", handlers.SaveUser)
+	http.HandleFunc("/", handlers.Index)
+	http.HandleFunc("/register", handlers.Register)
 	http.HandleFunc("/auth", func(rw http.ResponseWriter, r *http.Request) {
 		// hash, err := u.HashPassword("secret12345")
 		// if err != nil {
