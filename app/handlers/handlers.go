@@ -12,6 +12,8 @@ import (
 	"os"
 	"text/template"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 func Index(w http.ResponseWriter, r *http.Request) {
@@ -29,6 +31,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 		JSONHandleError(w, err)
 	}
 }
+
 func Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
@@ -46,7 +49,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		User_Name:  r.FormValue("user_name"),
 		Email:      r.FormValue("email"),
 		Salt:       "",
-		Pwd:        r.FormValue("password"),
+		Pwd:        r.FormValue("pwd"),
 		CreatedAt:  time.Now().Unix(),
 		UsrRole:    r.FormValue("user_role"),
 		Department: r.FormValue("department"),
@@ -68,6 +71,56 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tmpl.Execute(w, usr)
+}
+
+func LogIn(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		return
+	}
+
+	pwd := r.FormValue("pwd")
+	if pwd == "" {
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		return
+	}
+
+	tf := r.FormValue("tf")
+	if tf == "" {
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		return
+	}
+
+	db, err := mydb.GetDb()
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+
+	u := &models.User{}
+	u, err = u.GetByTF(db, tf)
+
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		return
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(u.Pwd), []byte(pwd))
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		return
+	}
+
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+	tmpl, err := template.ParseFiles(wd + "/templates/login.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tmpl.Execute(w, u)
 }
 
 func JSONHandleError(w http.ResponseWriter, err error) {

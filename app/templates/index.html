@@ -7,6 +7,7 @@
     <title>Document</title>
 </head>
 <body>
+    <h1>REGISTER</h1>
     <h1>{{.}}</h1>
     <form action="/register" method="post">
         <label>TF:</label><br /><input type="text" name="tf"><br /><br />
@@ -15,6 +16,14 @@
         <label>Emails:</label><br /><input type="email" name="email"><br /><br />
         <label>Role:</label><br /><input type="text" name="user_role"><br /><br />
         <label>Department:</label><br /><input type="text" name="department"><br /><br />
+        <input type="submit">
+    </form>
+<br><br>
+    <h1>LOG IN</h1>
+    <h1>{{.}}</h1>
+    <form action="/login" method="post">
+        <label>TF:</label><br /><input type="text" name="tf"><br /><br />
+        <label>password:</label><br /><input type="password" name="pwd"><br /><br />
         <input type="submit">
     </form>
 </body>

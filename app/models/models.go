@@ -19,6 +19,7 @@ type User struct {
 }
 
 func (u *User) Save(db *sql.DB) (*User, error) {
+	fmt.Printf("user in Save: %v \n", u)
 	h, err := hashPassword(u.Pwd)
 	if err != nil {
 		return nil, fmt.Errorf("hashPassword(u.Pwd)=%w", err)
@@ -37,10 +38,31 @@ func (u *User) Save(db *sql.DB) (*User, error) {
 	return u, nil
 }
 
+func (u *User) GetByTF(db *sql.DB, TF string) (*User, error) {
+
+	mySQl := `select tf,user_name, email, salt, pwd, usr_role, department from auth.users where TF = '` + TF + `';`
+
+	rows, err := db.Query(mySQl)
+	if err != nil {
+		fmt.Println(fmt.Errorf("error retrieving user: %v", err))
+		return nil, fmt.Errorf("error retrieving user: %v", err)
+	}
+	for rows.Next() {
+		err = rows.Scan(&u.TF, &u.User_Name, &u.Email, &u.Salt, &u.Pwd, &u.UsrRole, &u.Department)
+	}
+	if err != nil {
+		fmt.Println(fmt.Errorf("error scanning the row in db: %v", err))
+		return &User{}, fmt.Errorf("error scanning the row in db: %v", err)
+	} else {
+		return u, nil
+	}
+
+}
+
 func hashPassword(password string) ([]byte, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return nil, fmt.Errorf("Error while hashing password with bcrypt: %w", err)
+		return nil, fmt.Errorf("error while hashing password with bcrypt: %w", err)
 	}
 	return hash, nil
 }
@@ -48,7 +70,7 @@ func hashPassword(password string) ([]byte, error) {
 func comparePassword(password string, hashedPwd []byte) error {
 	err := bcrypt.CompareHashAndPassword(hashedPwd, []byte(password))
 	if err != nil {
-		return fmt.Errorf("Error comparing pwd: %w", err)
+		return fmt.Errorf("error comparing pwd: %w", err)
 	}
 	return nil
 

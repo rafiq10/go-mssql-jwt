@@ -24,20 +24,7 @@ func main() {
 
 	http.HandleFunc("/", handlers.Index)
 	http.HandleFunc("/register", handlers.Register)
-	http.HandleFunc("/auth", func(rw http.ResponseWriter, r *http.Request) {
-		// hash, err := u.HashPassword("secret12345")
-		// if err != nil {
-		// 	panic(err)
-		// }
-
-		// err = u.ComparePassword("secret12345", []byte(hash))
-		// if err != nil {
-		// 	rw.Write([]byte("not logged in!"))
-		// 	log.Default().Println(err.Error())
-		// }
-		rw.Write([]byte("logged in!"))
-
-	})
+	http.HandleFunc("/login", handlers.LogIn)
 	s := &http.Server{
 		Addr: ":9090",
 		// Handler:      mycors(sm),
