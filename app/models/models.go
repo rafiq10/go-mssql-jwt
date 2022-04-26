@@ -8,14 +8,14 @@ import (
 )
 
 type User struct {
-	TF         string `json: "tf"`
-	User_Name  string `json: "user_name"`
-	Email      string `json: "email"`
-	Salt       string `json: "salt"`
-	Pwd        string `json: "pwd"`
-	CreatedAt  int64  `json: "created_at"`
-	UsrRole    string `json: "usr_role"`
-	Department string `json: "department"`
+	TF         string         `json: "tf"`
+	User_Name  string         `json: "user_name"`
+	Email      string         `json: "email"`
+	Salt       sql.NullString `json: "salt"`
+	Pwd        string         `json: "pwd"`
+	CreatedAt  int64          `json: "created_at"`
+	UsrRole    string         `json: "usr_role"`
+	Department string         `json: "department"`
 }
 
 func (u *User) Save(db *sql.DB) (*User, error) {
@@ -28,7 +28,7 @@ func (u *User) Save(db *sql.DB) (*User, error) {
 	mySQl := `insert into auth.users 
 	(tf,user_name, email, salt, pwd, created_at, usr_role, department) 
 	values 
-	('` + u.TF + `','` + u.User_Name + `','` + u.Email + `','` + u.Salt + `','` + string(h) + `',Now(),'` + u.UsrRole + `','` + u.Department + `') on conflict (tf) do nothing;`
+	('` + u.TF + `','` + u.User_Name + `','` + u.Email + `','` + u.Salt.String + `','` + string(h) + `',Now(),'` + u.UsrRole + `','` + u.Department + `') on conflict (tf) do nothing;`
 
 	_, err = db.Exec(mySQl)
 

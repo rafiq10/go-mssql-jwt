@@ -21,7 +21,22 @@ func main() {
 		l.Fatal(err)
 	}
 	defer db.Close()
-
+	ticker := time.NewTicker(24 * time.Hour)
+	quit := make(chan struct{})
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				err = mydb.GenerateKeys()
+				if err != nil {
+					log.Printf("Error generating keys: GenerateKeys()= %v", err)
+				}
+			case <-quit:
+				ticker.Stop()
+				return
+			}
+		}
+	}()
 	http.HandleFunc("/", handlers.Index)
 	http.HandleFunc("/register", handlers.Register)
 	http.HandleFunc("/login", handlers.LogIn)

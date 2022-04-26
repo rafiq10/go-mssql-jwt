@@ -4,10 +4,15 @@ import (
 	"app/errhdl"
 	"app/models"
 	"app/mydb"
+	"crypto/hmac"
+	"crypto/sha256"
+	"database/sql"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"text/template"
@@ -55,7 +60,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		TF:         r.FormValue("tf"),
 		User_Name:  r.FormValue("user_name"),
 		Email:      r.FormValue("email"),
-		Salt:       "",
+		Salt:       sql.NullString{String: "", Valid: true},
 		Pwd:        r.FormValue("pwd"),
 		CreatedAt:  time.Now().Unix(),
 		UsrRole:    r.FormValue("user_role"),
@@ -198,4 +203,27 @@ func getLoginData(statusCode int, userName string) (*LoginData, *template.Templa
 	}
 
 	return d, tmpl
+}
+
+func createToken(sid string) (error, string) {
+	id := rand.Intn(10)
+	db, err := mydb.GetDb()
+	if err != nil {
+		return fmt.Errorf("mydb.GetDb() error in createToken(): %v", err), ""
+	}
+
+	rows, err := db.Query("select key,id from auth.keys offset " + fmt.Sprint(id))
+	if err != nil {
+		return fmt.Errorf("db.Query(select key from auth.keys offset  %d)=%v", id, err), ""
+	}
+	cols, err := rows.Columns()
+
+	if err != nil {
+		return fmt.Errorf("rows.Columns()=%v", err), ""
+	}
+	fmt.Println(cols[0])
+	h := hmac.New(sha256.New, []byte(cols[0]))
+	h.Write([]byte(sid))
+	signedHMAC := base64.StdEncoding.EncodeToString(h.Sum([]byte(cols[1])))
+	return nil, signedHMAC + "|" + sid
 }
