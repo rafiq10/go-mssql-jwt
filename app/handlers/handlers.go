@@ -15,6 +15,8 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 	"text/template"
 	"time"
 
@@ -207,23 +209,62 @@ func getLoginData(statusCode int, userName string) (*LoginData, *template.Templa
 
 func createToken(sid string) (error, string) {
 	id := rand.Intn(10)
+	key, err := getKeyById(id)
+	if err != nil {
+		return err, ""
+	}
+	fmt.Println(key)
+	h := hmac.New(sha256.New, []byte(key))
+	h.Write([]byte(sid))
+
+	// to base64
+	signedHMAC := base64.StdEncoding.EncodeToString(h.Sum([]byte(strconv.Itoa(id))))
+
+	// signiture | original sessionID
+	return nil, signedHMAC + "|" + sid + "|" + string(id)
+}
+
+func parseToen(signedStr string) (string, error) {
+	xs := strings.SplitN(signedStr, "|", 3)
+	if len(xs) != 3 {
+		return "", fmt.Errorf("invalid signed string")
+	}
+	b64 := xs[0]
+	sessionId := xs[1]
+	keyId, _ := strconv.Atoi(xs[2])
+	key, err := getKeyById(keyId)
+	if err != nil {
+		return "", fmt.Errorf("parseToen -> getKeyById(%s) = %w", key, err)
+	}
+
+	xb, err := base64.StdEncoding.DecodeString(b64)
+	if err != nil {
+		return "", fmt.Errorf("parseToen -> DecodeString(b64) = %w", err)
+	}
+
+	h := hmac.New(sha256.New, []byte(key))
+	h.Write([]byte(sessionId))
+
+	ok := hmac.Equal(xb, h.Sum([]byte(strconv.Itoa(keyId))))
+	if !ok {
+		return "", fmt.Errorf("Could not parse token")
+	}
+	return sessionId, nil
+}
+
+func getKeyById(id int) (string, error) {
 	db, err := mydb.GetDb()
 	if err != nil {
-		return fmt.Errorf("mydb.GetDb() error in createToken(): %v", err), ""
+		return "", fmt.Errorf("mydb.GetDb() error in createToken(): %v", err)
 	}
 
 	rows, err := db.Query("select key,id from auth.keys offset " + fmt.Sprint(id))
 	if err != nil {
-		return fmt.Errorf("db.Query(select key from auth.keys offset  %d)=%v", id, err), ""
+		return "", fmt.Errorf("db.Query(select key from auth.keys offset  %d)=%v", id, err)
 	}
 	cols, err := rows.Columns()
-
 	if err != nil {
-		return fmt.Errorf("rows.Columns()=%v", err), ""
+		return "", fmt.Errorf("rows.Columns()=%v", err)
 	}
-	fmt.Println(cols[0])
-	h := hmac.New(sha256.New, []byte(cols[0]))
-	h.Write([]byte(sid))
-	signedHMAC := base64.StdEncoding.EncodeToString(h.Sum([]byte(cols[1])))
-	return nil, signedHMAC + "|" + sid
+	return cols[0], nil
 }
