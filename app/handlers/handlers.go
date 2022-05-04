@@ -3,10 +3,10 @@ package handlers
 import (
 	"app/errhdl"
 	"app/models"
+
 	"app/mydb"
 	"crypto/hmac"
 	"crypto/sha256"
-	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -31,16 +31,60 @@ type LoginData struct {
 }
 
 func Index(w http.ResponseWriter, r *http.Request) {
+	var usr *models.User
+	var l *LoginData
+
+	c, err := r.Cookie("sessionID")
+	if err != nil {
+		c = &http.Cookie{
+			Name:  "sessionID",
+			Value: "",
+		}
+		l = &LoginData{
+			LoggedIn: false,
+			UsrName:  "",
+			ErrMsg:   "Not logged in",
+			ErrCode:  http.StatusUnauthorized,
+		}
+	}
 	wd, err := os.Getwd()
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	tmpl, err := template.ParseFiles(wd + "/templates/index.html")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = tmpl.Execute(w, nil)
+	if c.Value != "" {
+		s, err := parseToken(c.Value)
+		if err != nil {
+			log.Printf("Index-->parseToken(%s)=%v", c.Value, err)
+		}
+
+		if s != "" {
+			db, err := mydb.GetDb()
+			if err != nil {
+				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+				return
+			}
+			u := &models.User{}
+			usr, err = u.GetBySessionID(db, s)
+			if err != nil {
+				JSONHandleError(w, err)
+			}
+
+			l = &LoginData{
+				LoggedIn: true,
+				UsrName:  usr.TF,
+				ErrMsg:   "",
+				ErrCode:  http.StatusOK,
+			}
+		}
+	}
+
+	err = tmpl.Execute(w, l)
 	if err != nil {
 		JSONHandleError(w, err)
 	}
@@ -62,7 +106,6 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		TF:         r.FormValue("tf"),
 		User_Name:  r.FormValue("user_name"),
 		Email:      r.FormValue("email"),
-		Salt:       sql.NullString{String: "", Valid: true},
 		Pwd:        r.FormValue("pwd"),
 		CreatedAt:  time.Now().Unix(),
 		UsrRole:    r.FormValue("user_role"),
@@ -74,6 +117,25 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		JSONHandleError(w, err)
 		return
 	}
+
+	err = usr.UpdateSID(db)
+	if err != nil {
+		JSONHandleError(w, err)
+		log.Fatalf("Register --> u.UpdateSID(db)=%v", err)
+		return
+	}
+	err, token := createToken(u.SessionId)
+	if err != nil {
+		JSONHandleError(w, err)
+		log.Fatalf("Register --> createToken(u.SessionId)=%v", err)
+		return
+	}
+
+	c := &http.Cookie{
+		Name:  "sessionID",
+		Value: token,
+	}
+	http.SetCookie(w, c)
 
 	wd, err := os.Getwd()
 	if err != nil {
@@ -132,14 +194,32 @@ func LogIn(w http.ResponseWriter, r *http.Request) {
 	err = bcrypt.CompareHashAndPassword([]byte(u.Pwd), []byte(pwd))
 	if err != nil {
 		d, tmpl = getLoginData(http.StatusUnauthorized, "")
-		fmt.Printf("data: %v", d)
 		tmpl.Execute(w, d)
 		return
 		// log.Fatalf("bcrypt.CompareHashAndPassword([]byte(u.Pwd), []byte(pwd))=%v", err)
 	}
 
+	err = u.UpdateSID(db)
+	if err != nil {
+		d, tmpl = getLoginData(http.StatusUnauthorized, "")
+		tmpl.Execute(w, d)
+		log.Fatalf("u.UpdateSID(db)=%v", err)
+	}
+	// u, err = u.GetByTF(db, tf)
+	err, token := createToken(u.SessionId)
+	if err != nil {
+		d, tmpl = getLoginData(http.StatusUnauthorized, "")
+		tmpl.Execute(w, d)
+		log.Fatalf("createToken(SessionId)=%v", err)
+	}
+
+	c := &http.Cookie{
+		Name:  "sessionID",
+		Value: token,
+	}
+	http.SetCookie(w, c)
+
 	d, tmpl = getLoginData(http.StatusOK, u.User_Name)
-	fmt.Printf("d: %v", d)
 	tmpl.Execute(w, d)
 }
 
@@ -209,22 +289,24 @@ func getLoginData(statusCode int, userName string) (*LoginData, *template.Templa
 
 func createToken(sid string) (error, string) {
 	id := rand.Intn(10)
+
 	key, err := getKeyById(id)
 	if err != nil {
 		return err, ""
 	}
-	fmt.Println(key)
+
 	h := hmac.New(sha256.New, []byte(key))
 	h.Write([]byte(sid))
 
 	// to base64
-	signedHMAC := base64.StdEncoding.EncodeToString(h.Sum([]byte(strconv.Itoa(id))))
+	signedHMAC := base64.StdEncoding.EncodeToString(h.Sum(nil))
 
 	// signiture | original sessionID
-	return nil, signedHMAC + "|" + sid + "|" + string(id)
+	return nil, signedHMAC + "|" + sid + "|" + strconv.Itoa(id)
 }
 
-func parseToen(signedStr string) (string, error) {
+func parseToken(signedStr string) (string, error) {
+
 	xs := strings.SplitN(signedStr, "|", 3)
 	if len(xs) != 3 {
 		return "", fmt.Errorf("invalid signed string")
@@ -232,6 +314,7 @@ func parseToen(signedStr string) (string, error) {
 	b64 := xs[0]
 	sessionId := xs[1]
 	keyId, _ := strconv.Atoi(xs[2])
+
 	key, err := getKeyById(keyId)
 	if err != nil {
 		return "", fmt.Errorf("parseToen -> getKeyById(%s) = %w", key, err)
@@ -245,7 +328,7 @@ func parseToen(signedStr string) (string, error) {
 	h := hmac.New(sha256.New, []byte(key))
 	h.Write([]byte(sessionId))
 
-	ok := hmac.Equal(xb, h.Sum([]byte(strconv.Itoa(keyId))))
+	ok := hmac.Equal(xb, h.Sum(nil))
 	if !ok {
 		return "", fmt.Errorf("Could not parse token")
 	}
@@ -253,18 +336,22 @@ func parseToen(signedStr string) (string, error) {
 }
 
 func getKeyById(id int) (string, error) {
+	var k, i string
 	db, err := mydb.GetDb()
 	if err != nil {
 		return "", fmt.Errorf("mydb.GetDb() error in createToken(): %v", err)
 	}
+	rows, err := db.Query("select key, id from auth.keys offset  " + strconv.Itoa(id) + " limit 1")
+	if err != nil {
+		return "", fmt.Errorf("db.Query(select key, id from auth.keys offset  %d)=%v", id, err)
+	}
 
-	rows, err := db.Query("select key,id from auth.keys offset " + fmt.Sprint(id))
+	rows.Next()
+	rows.Scan(&k, &i)
 	if err != nil {
-		return "", fmt.Errorf("db.Query(select key from auth.keys offset  %d)=%v", id, err)
+		return "", fmt.Errorf("error scanning the row in db: %v", err)
+	} else {
+
+		return k, nil
 	}
-	cols, err := rows.Columns()
-	if err != nil {
-		return "", fmt.Errorf("rows.Columns()=%v", err)
-	}
-	return cols[0], nil
 }

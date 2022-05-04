@@ -5,26 +5,52 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+
+ 
+        <style>
+        .button {
+          border: none;
+          color: white;
+          
+          padding: 10px 20px;
+          text-align: center;
+          text-decoration: none;
+          display: inline-block;
+          font-size: 14px;
+          font-weight:700;
+          margin: 2px 2px;
+          cursor: pointer;
+        }
+        
+        .button1 {background-color: #4CAF50;} /* Green */
+        .button2 {background-color: #008CBA;} /* Blue */
+        </style>
+
 </head>
 <body>
-    <h1>REGISTER</h1>
-    <h1>{{.}}</h1>
-    <form action="/register" method="post">
-        <label>TF:</label><br /><input type="text" name="tf"><br /><br />
-        <label>password:</label><br /><input type="password" name="pwd"><br /><br />
-        <label>User Name:</label><br /><input type="text" name="user_name"><br /><br />
-        <label>Emails:</label><br /><input type="email" name="email"><br /><br />
-        <label>Role:</label><br /><input type="text" name="user_role"><br /><br />
-        <label>Department:</label><br /><input type="text" name="department"><br /><br />
-        <input type="submit">
-    </form>
-<br><br>
-    <h1>LOG IN</h1>
-    <h1>{{.}}</h1>
-    <form action="/login" method="post">
-        <label>TF:</label><br /><input type="text" name="tf"><br /><br />
-        <label>password:</label><br /><input type="password" name="pwd"><br /><br />
-        <input type="submit">
-    </form>
+    {{ if .LoggedIn }}
+        <h1>Welcome {{.UsrName}}</h1>
+        <button type="button" class="button button2">Log out</button>
+    {{ else }}
+        <h1>REGISTER</h1>
+        <h1>You need to log in or register</h1>
+        <form action="/register" method="post">
+            <label>TF:</label><br /><input type="text" name="tf"><br /><br />
+            <label>password:</label><br /><input type="password" name="pwd"><br /><br />
+            <label>User Name:</label><br /><input type="text" name="user_name"><br /><br />
+            <label>Emails:</label><br /><input type="email" name="email"><br /><br />
+            <label>Role:</label><br /><input type="text" name="user_role"><br /><br />
+            <label>Department:</label><br /><input type="text" name="department"><br /><br />
+            <input type="submit">
+        </form>
+        <br><br>
+        <h1>LOG IN</h1>
+        
+        <form action="/login" method="post">
+            <label>TF:</label><br /><input type="text" name="tf"><br /><br />
+            <label>password:</label><br /><input type="password" name="pwd"><br /><br />
+            <input type="submit">
+        </form>
+    {{ end }}
 </body>
 </html>

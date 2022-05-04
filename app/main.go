@@ -21,6 +21,10 @@ func main() {
 		l.Fatal(err)
 	}
 	defer db.Close()
+	err = mydb.GenerateKeys()
+	if err != nil {
+		log.Fatalf("Error generating keys: GenerateKeys()= %v", err)
+	}
 	ticker := time.NewTicker(24 * time.Hour)
 	quit := make(chan struct{})
 	go func() {
