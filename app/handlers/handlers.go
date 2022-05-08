@@ -157,25 +157,16 @@ func LogIn(w http.ResponseWriter, r *http.Request) {
 	var tmpl *template.Template
 
 	if r.Method != http.MethodPost {
-		d, tmpl = getLoginData(http.StatusMethodNotAllowed, "")
-		tmpl.Execute(w, d)
-		log.Fatalf("r.Method != http.MethodPost")
+		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		return
 	}
 
 	pwd := r.FormValue("pwd")
-	if pwd == "" {
-		d, tmpl = getLoginData(http.StatusUnauthorized, "")
-		tmpl.Execute(w, d)
-		log.Fatalf("pwd empty")
-	}
-
 	tf := r.FormValue("tf")
 	if tf == "" {
-		d, tmpl = getLoginData(http.StatusUnauthorized, "")
-		tmpl.Execute(w, d)
-		log.Fatalf("ptf empty")
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		return
 	}
-
 	db, err := mydb.GetDb()
 	if err != nil {
 		d, tmpl = getLoginData(http.StatusNotFound, "")
@@ -220,6 +211,7 @@ func LogIn(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, c)
 
 	d, tmpl = getLoginData(http.StatusOK, u.User_Name)
+	log.Println("got to login end")
 	tmpl.Execute(w, d)
 }
 
@@ -251,6 +243,9 @@ func getLoginData(statusCode int, userName string) (*LoginData, *template.Templa
 	if statusCode != http.StatusOK {
 		l = false
 	}
+	if userName == "" {
+		l = false
+	}
 	d := &LoginData{
 		UsrName:  userName,
 		LoggedIn: l,
@@ -269,6 +264,7 @@ func getLoginData(statusCode int, userName string) (*LoginData, *template.Templa
 
 	tmpl, err := template.ParseFiles(wd + "/templates/login.html")
 	if err != nil {
+		log.Println(" template.ParseFiles error")
 		d = &LoginData{
 			UsrName:  userName,
 			LoggedIn: d.LoggedIn,
@@ -276,12 +272,15 @@ func getLoginData(statusCode int, userName string) (*LoginData, *template.Templa
 			ErrCode:  http.StatusInternalServerError,
 		}
 	} else {
+		log.Println(" template.ParseFiles NO error")
+
 		d = &LoginData{
 			UsrName:  userName,
 			LoggedIn: d.LoggedIn,
-			ErrMsg:   http.StatusText(http.StatusOK),
-			ErrCode:  http.StatusOK,
+			ErrMsg:   http.StatusText(statusCode),
+			ErrCode:  statusCode,
 		}
+		log.Printf("d: %v \n", d)
 	}
 
 	return d, tmpl
