@@ -5,9 +5,31 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+
+    <style>
+        .button {
+          border: none;
+          color: white;
+          
+          padding: 10px 20px;
+          text-align: center;
+          text-decoration: none;
+          display: inline-block;
+          font-size: 14px;
+          font-weight:700;
+          margin: 2px 2px;
+          cursor: pointer;
+        }
+        
+        .button1 {background-color: #4CAF50;} /* Green */
+        .button2 {background-color: #008CBA;} /* Blue */
+        </style>
 </head>
 <body>
     {{ if .LoggedIn }}<h3>You logged in: </h3>{{ else }} <h3>Unsuccessful Login</h3>{{ end }}
-    {{ if .LoggedIn }}<p>Welcome, {{ .UsrName }}!</p> {{ end }}
+    {{ if .LoggedIn }}
+    <p>Welcome, {{ .UsrName }}!</p> 
+    <button type="button" class="button button2">Log out</button>
+    {{ end }}
 </body>
 </html>
